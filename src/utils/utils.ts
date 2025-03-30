@@ -14,4 +14,19 @@ function setStorage(obj: object): Promise<void> {
   });
 }
 
-export { getStorage, setStorage };
+function groupBy<T>(
+  items: T[],
+  keyGetter: (item: T) => string
+): Record<string, T[]> {
+  const grouped: Record<string, T[]> = {};
+  for (const item of items) {
+    const key = keyGetter(item);
+    if (!grouped[key]) {
+      grouped[key] = [];
+    }
+    grouped[key].push(item);
+  }
+  return grouped;
+}
+
+export { getStorage, setStorage, groupBy };
