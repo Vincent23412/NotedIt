@@ -30,22 +30,38 @@ document.addEventListener("DOMContentLoaded", () => {
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 });
 
-const showNoteList = async (
-  noteList: HTMLUListElement,
-) => {
+const showNoteList = async (noteList: HTMLUListElement, key: keyof Note = "hostname") => {
   const notes: Note[] = (await getStorage("notes")) || [];
 
   noteList.innerHTML = "";
 
   // 預設用 hostname 分組
-  const groupedNotes = groupBy<Note>(notes, (note) => note.hostname);
+  const groupedNotes = groupBy<Note>(notes, (note) =>  note[key]);
 
   console.log("分組後的筆記：", groupedNotes);
 
-  // 加入每一筆筆記
-  notes.forEach((note) => {
-    addNoteBlock(note, noteList);
-  });
+  for (const [hostname, noteGroup] of Object.entries(groupedNotes)) {
+    // 建立分組容器
+    const groupSection = document.createElement("div");
+    groupSection.style.marginBottom = "16px";
+
+    // 加上群組標題
+    const groupHeader = document.createElement("h4");
+    groupHeader.textContent = `🌐 ${hostname}`;
+    groupHeader.style.marginBottom = "6px";
+    groupHeader.style.borderBottom = "1px solid #ccc";
+    groupHeader.style.paddingBottom = "4px";
+    groupSection.appendChild(groupHeader);
+
+    // 加入該群的每一筆筆記
+    noteGroup.forEach((note) => {
+      const li = createNoteBlock(note); // 回傳 li 元素
+      groupSection.appendChild(li);
+    });
+
+    // 把群組加進主清單
+    noteList.appendChild(groupSection);
+  }
 };
 
 const createNoteSaver = (
@@ -86,7 +102,7 @@ const createNoteSaver = (
   };
 };
 
-const addNoteBlock = (note: Note, noteList: HTMLUListElement) => {
+const createNoteBlock = (note: Note): HTMLLIElement => {
   const li = document.createElement("li");
   li.style.display = "flex";
   li.style.flexDirection = "column";
@@ -94,7 +110,7 @@ const addNoteBlock = (note: Note, noteList: HTMLUListElement) => {
   li.style.padding = "6px";
   li.style.borderBottom = "1px solid #ddd";
 
-  // 建立 icon 區
+  // icon
   const iconImg = document.createElement("img");
   iconImg.src = note.iconUrl || "icons/default-icon.png";
   iconImg.alt = "icon";
@@ -102,7 +118,7 @@ const addNoteBlock = (note: Note, noteList: HTMLUListElement) => {
   iconImg.height = 16;
   iconImg.style.marginRight = "4px";
 
-  // 建立內容行（icon + 內容）
+  // 內容區
   const contentRow = document.createElement("div");
   contentRow.style.display = "flex";
   contentRow.style.alignItems = "center";
@@ -114,7 +130,7 @@ const addNoteBlock = (note: Note, noteList: HTMLUListElement) => {
   contentRow.appendChild(iconImg);
   contentRow.appendChild(contentSpan);
 
-  // 建立超連結區
+  // 連結區
   const urlLink = document.createElement("a");
   urlLink.href = note.url;
   urlLink.textContent = `🔗 ${note.url}`;
@@ -124,10 +140,10 @@ const addNoteBlock = (note: Note, noteList: HTMLUListElement) => {
   urlLink.style.textDecoration = "underline";
   urlLink.style.wordBreak = "break-all";
 
-  // 組裝 li
   li.appendChild(contentRow);
   li.appendChild(urlLink);
-  noteList.appendChild(li);
+
+  return li;
 };
 
 const deleteNote = () => {

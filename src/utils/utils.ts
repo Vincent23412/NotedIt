@@ -16,11 +16,12 @@ function setStorage(obj: object): Promise<void> {
 
 function groupBy<T>(
   items: T[],
-  keyGetter: (item: T) => string
+  keyGetter: (item: T) => any
 ): Record<string, T[]> {
   const grouped: Record<string, T[]> = {};
   for (const item of items) {
-    const key = keyGetter(item);
+    const rawKey = keyGetter(item);
+    const key = String(rawKey ?? "未分類");
     if (!grouped[key]) {
       grouped[key] = [];
     }
