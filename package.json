@@ -1,6 +1,8 @@
 {
   "name": "noted-extension",
   "version": "1.0.0",
+  "moduleResolution": "node",
+  "description": "即時筆記 Chrome 擴充功能",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch"

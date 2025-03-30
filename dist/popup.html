@@ -1,11 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
-  <link rel="stylesheet" href="popup.css" />
+  <meta charset="UTF-8" />
+  <title>即時筆記 NotedIt</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 10px;
+      width: 300px;
+    }
+    #note-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+    .note-item {
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
+    #new-note {
+      width: 100%;
+      height: 80px;
+    }
+    #save-button {
+      margin-top: 5px;
+      width: 100%;
+    }
+    #note-list li {
+      margin-bottom: 10px;
+      padding: 6px;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+    #note-list a {
+      display: block;
+      font-size: 0.85em;
+      color: #0066cc;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+
+  </style>
 </head>
 <body>
-  <h1>fqwefeefq</h1>
-  <textarea id="note" placeholder="write some note"></textarea>
+  <h2>📝 我的筆記</h2>
+
+  <!-- 已儲存的記事列表 -->
+  <div id="note-list">
+    <!-- JS 動態插入每一筆記事 -->
+  </div>
+
+  <!-- 新增記事 -->
+  <textarea id="note" placeholder="輸入新的筆記..."></textarea>
+  <button id="save-button">➕ 儲存筆記</button>
+
+  <script src="popup.js"></script>
 </body>
-<script src="popup.js"></script>
 </html>
