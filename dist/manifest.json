@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "NotedIt",
+  "version": "1.0",
+  "description": "即時筆記 Chrome 擴充功能",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["<all_urls>"]
+}

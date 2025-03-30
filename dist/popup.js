@@ -1,0 +1,1 @@
+(()=>{"use strict";document.addEventListener("DOMContentLoaded",(()=>{const e=document.getElementById("note");console.log(e),chrome.storage.local.get(["note"],(t=>{e.value=t.note||""})),e.addEventListener("input",(()=>{chrome.storage.local.set({note:e.value})}))}))})();
