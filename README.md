@@ -19,7 +19,7 @@ NotedIt 是一款簡潔實用的 Chrome 擴充功能，讓你在瀏覽任意網�
 ## 📦 安裝方法（開發者模式）
 
 1. 下載專案或 `git clone`：
-   ```bash
+```bash
    git clone https://github.com/Vincent23412/NotedIt.git
    cd NotedIt
 ```
@@ -65,7 +65,7 @@ NotedIt/
 }
 ```
 
-🙌 貢獻者
+🙌 貢獻者  
 由 Vincent23412 開發與維護。
 歡迎提出 PR 或 Issue，一起打造實用的筆記工具！
 
