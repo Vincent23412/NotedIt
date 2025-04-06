@@ -20,6 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const clearButton = document.getElementById(
     "clear-button"
   ) as HTMLButtonElement;
+  const importButton = document.getElementById(
+    "import-button"
+  ) as HTMLButtonElement;
+  const importFileInput = document.getElementById(
+    "import-file"
+  ) as HTMLInputElement;
 
   clearButton.addEventListener("click", deleteAllNote);
 
@@ -27,6 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
   sortSelect.addEventListener("change", () => {
     showNoteList(noteList, sortSelect.value as keyof Note);
   });
+
+  importButton.addEventListener("click", () => {
+    importFileInput.click(); // 觸發隱藏的 input
+  });
+
+  importFileInput.addEventListener("change", importFile);
 
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 });
@@ -162,4 +174,48 @@ const createNoteSaver = (
 
     showNoteList(noteList);
   };
+};
+
+const importFile = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+
+    const importedNotes: Note[] = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsed.content)
+        ? parsed.content
+        : [];
+
+    if (!importedNotes.length) {
+      alert("⚠️ 匯入格式錯誤或沒有任何筆記！");
+      return;
+    }
+
+    const existingNotes: Note[] = (await getStorage("notes")) || [];
+
+    const newNotes = importedNotes.map((note) => ({
+      ...note,
+      id: crypto.randomUUID(),
+    }));
+
+    const merged = [...existingNotes, ...newNotes];
+    await setStorage({ notes: merged });
+
+    alert(`✅ 已匯入 ${newNotes.length} 筆筆記！`);
+    const noteList = document.getElementById("note-list") as HTMLUListElement;
+    const sortSelect = document.getElementById(
+      "sort-select"
+    ) as HTMLSelectElement;
+    showNoteList(noteList, sortSelect.value as keyof Note);
+  } catch (err) {
+    alert("❌ 匯入失敗，檔案格式可能錯誤！");
+    console.error(err);
+  } finally {
+    (event.target as HTMLInputElement).value = "";
+  }
 };

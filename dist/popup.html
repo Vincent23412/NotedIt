@@ -213,8 +213,25 @@
     .note-delete-btn:hover {
       color: #e74c3c;
     }
-
     
+    #import-button {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      background-color: #f39c12;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      margin-top: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    #import-button:hover {
+      background-color: #e67e22;
+    }
+
+        
 
   </style>
 </head>
@@ -239,7 +256,9 @@
   <input type="text" id="tag-input" placeholder="輸入標籤（以逗號分隔）" />
   <button id="save-button">➕ 儲存筆記</button>
   <button id="clear-button">🗑 清除所有筆記</button>
-
+  <button id="import-button">📥 匯入筆記</button>
+  <input type="file" id="import-file" accept=".json" style="display: none;" />
+  
   <script src="popup.js"></script>
 </body>
 </html>

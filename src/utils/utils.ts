@@ -80,6 +80,7 @@ const exportGroupNotes = (groupKey: string, notes: Note[]) => {
   document.body.removeChild(a);
 };
 
+
 export {
   getStorage,
   setStorage,
