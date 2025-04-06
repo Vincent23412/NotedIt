@@ -1,6 +1,7 @@
 import { getStorage, setStorage, groupBy } from "../utils/utils";
 
 type Note = {
+  id: string;
   content: string;
   url: string;
   title: string;
@@ -30,37 +31,81 @@ document.addEventListener("DOMContentLoaded", () => {
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 });
 
-const showNoteList = async (noteList: HTMLUListElement, key: keyof Note = "hostname") => {
+const showNoteList = async (
+  noteList: HTMLUListElement,
+  sortKey: keyof Note = "tags"
+) => {
   const notes: Note[] = (await getStorage("notes")) || [];
-
   noteList.innerHTML = "";
 
-  // 預設用 hostname 分組
-  const groupedNotes = groupBy<Note>(notes, (note) =>  note[key]);
+  const groupedNotes = groupBy<Note>(notes, (note) => {
+    const raw = note[sortKey];
+    return Array.isArray(raw)
+      ? raw.join(",") || "未分類"
+      : String(raw ?? "未分類");
+  });
 
-  console.log("分組後的筆記：", groupedNotes);
+  for (const [groupKey, group] of Object.entries(groupedNotes)) {
+    const section = document.createElement("li");
+    section.className = "note-item";
 
-  for (const [hostname, noteGroup] of Object.entries(groupedNotes)) {
-    // 建立分組容器
-    const groupSection = document.createElement("div");
-    groupSection.style.marginBottom = "16px";
+    // 動態決定標題區域內容
+    if (sortKey === "url") {
+      const urlLink = document.createElement("a");
+      urlLink.href = groupKey;
+      urlLink.textContent = "🔗 前往網頁";
+      urlLink.target = "_blank";
+      urlLink.className = "note-url";
+      urlLink.style.marginBottom = "6px";
+      urlLink.style.display = "inline-block";
+      section.appendChild(urlLink);
+    } else if (sortKey === "tags") {
+      const tagLabel = document.createElement("div");
+      tagLabel.textContent = `🏷️ Tag：${groupKey}`;
+      tagLabel.style.fontSize = "13px";
+      tagLabel.style.marginBottom = "6px";
+      tagLabel.style.fontWeight = "bold";
+      section.appendChild(tagLabel);
+    } else {
+      const label = document.createElement("div");
+      label.textContent = `📁 ${sortKey}: ${groupKey}`;
+      label.style.fontSize = "13px";
+      label.style.marginBottom = "6px";
+      section.appendChild(label);
+    }
 
-    // 加上群組標題
-    const groupHeader = document.createElement("h4");
-    groupHeader.textContent = `🌐 ${hostname}`;
-    groupHeader.style.marginBottom = "6px";
-    groupHeader.style.borderBottom = "1px solid #ccc";
-    groupHeader.style.paddingBottom = "4px";
-    groupSection.appendChild(groupHeader);
+    // 顯示群組內所有筆記（只顯示內容與 icon）
+    group.forEach((note) => {
+      const row = document.createElement("div");
+      row.className = "note-content";
 
-    // 加入該群的每一筆筆記
-    noteGroup.forEach((note) => {
-      const li = createNoteBlock(note); // 回傳 li 元素
-      groupSection.appendChild(li);
+      const iconImg = document.createElement("img");
+      iconImg.src = note.iconUrl || "icons/default-icon.png";
+      iconImg.alt = "icon";
+      iconImg.className = "note-icon";
+
+      const contentSpan = document.createElement("span");
+      contentSpan.textContent = note.content;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "🗑";
+      deleteBtn.className = "note-delete-btn";
+      deleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (confirm("確定要刪除這筆筆記嗎？")) {
+          await deleteNoteById(note.id);
+          await showNoteList(noteList, sortKey); // 保持原本的排序方式
+        }
+      });
+
+      row.appendChild(iconImg);
+      row.appendChild(contentSpan);
+      row.appendChild(deleteBtn);
+
+      section.appendChild(row);
     });
 
-    // 把群組加進主清單
-    noteList.appendChild(groupSection);
+    noteList.appendChild(section);
   }
 };
 
@@ -72,27 +117,37 @@ const createNoteSaver = (
     const content = textarea.value;
     if (!content) return;
 
+    const tagInput = document.getElementById("tag-input") as HTMLInputElement;
+    const rawTags = tagInput.value;
+    const tags = rawTags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag !== "");
+
     const [notesData, tabs] = await Promise.all([
       getStorage("notes"),
       chrome.tabs.query({ active: true, currentWindow: true }),
     ]);
-
     const url = tabs[0]?.url || "unknown";
     const iconUrl = tabs[0]?.favIconUrl || "";
     const title = tabs[0]?.title || "unknown";
     const hostname = url !== "unknown" ? new URL(url).hostname : "unknown";
     const notes: Note[] = notesData || [];
-
+    const id = `${url}-${content}`;
     const note: Note = {
+      id,
       title,
       content,
       url,
       iconUrl,
       hostname,
       createdAt: Date.now(),
+      tags,
     };
 
     notes.push(note);
+
+    notes.sort((a, b) => a.hostname.charCodeAt(0) - b.hostname.charCodeAt(0));
 
     await setStorage({ notes });
 
@@ -104,50 +159,51 @@ const createNoteSaver = (
 
 const createNoteBlock = (note: Note): HTMLLIElement => {
   const li = document.createElement("li");
-  li.style.display = "flex";
-  li.style.flexDirection = "column";
-  li.style.marginBottom = "10px";
-  li.style.padding = "6px";
-  li.style.borderBottom = "1px solid #ddd";
+  li.className = "note-item";
 
-  // icon
   const iconImg = document.createElement("img");
   iconImg.src = note.iconUrl || "icons/default-icon.png";
   iconImg.alt = "icon";
-  iconImg.width = 16;
-  iconImg.height = 16;
-  iconImg.style.marginRight = "4px";
-
-  // 內容區
-  const contentRow = document.createElement("div");
-  contentRow.style.display = "flex";
-  contentRow.style.alignItems = "center";
-  contentRow.style.gap = "4px";
+  iconImg.className = "note-icon";
 
   const contentSpan = document.createElement("span");
   contentSpan.textContent = note.content;
 
+  const contentRow = document.createElement("div");
+  contentRow.className = "note-content";
   contentRow.appendChild(iconImg);
   contentRow.appendChild(contentSpan);
 
-  // 連結區
   const urlLink = document.createElement("a");
   urlLink.href = note.url;
-  urlLink.textContent = `🔗 ${note.url}`;
+  urlLink.textContent = note.url;
   urlLink.target = "_blank";
-  urlLink.style.fontSize = "0.85em";
-  urlLink.style.color = "#0066cc";
-  urlLink.style.textDecoration = "underline";
-  urlLink.style.wordBreak = "break-all";
+  urlLink.className = "note-url";
 
+  const deleteBtn = document.createElement("button");
+  deleteBtn.innerText = "🗑";
+  deleteBtn.className = "note-delete-btn";
+  deleteBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (confirm("確定要刪除這筆筆記嗎？")) {
+      await deleteNoteById(note.id);
+      const noteList = document.getElementById("note-list") as HTMLUListElement;
+      await showNoteList(noteList);
+    }
+  });
+
+  li.appendChild(deleteBtn);
   li.appendChild(contentRow);
   li.appendChild(urlLink);
-
   return li;
 };
 
-const deleteNote = () => {
-  chrome.storage.local.remove("notes", () => {
-    console.log("筆記已刪除！");
-  });
+const deleteNoteById = async (id: string) => {
+  const notes: Note[] = (await getStorage("notes")) || [];
+
+  const filtered = notes.filter((note) => note.id !== id);
+
+  await setStorage({ notes: filtered });
+
+  console.log(`已刪除筆記（id=${id}）`);
 };
