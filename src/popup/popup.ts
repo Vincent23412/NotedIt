@@ -1,23 +1,12 @@
-import { getStorage, setStorage, groupBy } from "../utils/utils";
-
-type Note = {
-  id: string;
-  content: string;
-  url: string;
-  title: string;
-  iconUrl: string;
-  hostname: string;
-  createdAt: number;
-  tags?: string[];
-  pinned?: boolean;
-  highlightedText?: string;
-  noteType?: "manual" | "auto";
-  completed?: boolean;
-};
-
-type NoteMap = {
-  [hostname: string]: Note[];
-};
+import {
+  getStorage,
+  setStorage,
+  groupBy,
+  deleteNoteById,
+  deleteAllNote,
+  exportGroupNotes,
+} from "../utils/utils";
+import { Note, NoteMap } from "../types/note";
 
 document.addEventListener("DOMContentLoaded", () => {
   const noteList = document.getElementById("note-list") as HTMLUListElement;
@@ -25,8 +14,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveButton = document.getElementById(
     "save-button"
   ) as HTMLButtonElement;
+  const sortSelect = document.getElementById(
+    "sort-select"
+  ) as HTMLSelectElement;
+  const clearButton = document.getElementById(
+    "clear-button"
+  ) as HTMLButtonElement;
 
-  showNoteList(noteList);
+  clearButton.addEventListener("click", deleteAllNote);
+
+  showNoteList(noteList, sortSelect.value as keyof Note);
+  sortSelect.addEventListener("change", () => {
+    showNoteList(noteList, sortSelect.value as keyof Note);
+  });
 
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 });
@@ -49,43 +49,50 @@ const showNoteList = async (
     const section = document.createElement("li");
     section.className = "note-item";
 
-    // 動態決定標題區域內容
+    // ==== 群組標題區塊 ====
+    const groupHeader = document.createElement("div");
+    groupHeader.className = "group-header";
+
+    const titleSpan = document.createElement("span");
+
     if (sortKey === "url") {
-      const urlLink = document.createElement("a");
-      urlLink.href = groupKey;
-      urlLink.textContent = "🔗 前往網頁";
-      urlLink.target = "_blank";
-      urlLink.className = "note-url";
-      urlLink.style.marginBottom = "6px";
-      urlLink.style.display = "inline-block";
-      section.appendChild(urlLink);
+      titleSpan.innerHTML = `<a href="${groupKey}" target="_blank" class="note-url">🔗 前往網頁</a>`;
     } else if (sortKey === "tags") {
-      const tagLabel = document.createElement("div");
-      tagLabel.textContent = `🏷️ Tag：${groupKey}`;
-      tagLabel.style.fontSize = "13px";
-      tagLabel.style.marginBottom = "6px";
-      tagLabel.style.fontWeight = "bold";
-      section.appendChild(tagLabel);
+      titleSpan.textContent = `🏷️ Tag：${groupKey}`;
     } else {
-      const label = document.createElement("div");
-      label.textContent = `📁 ${sortKey}: ${groupKey}`;
-      label.style.fontSize = "13px";
-      label.style.marginBottom = "6px";
-      section.appendChild(label);
+      titleSpan.textContent = `📁 ${sortKey}: ${groupKey}`;
     }
 
-    // 顯示群組內所有筆記（只顯示內容與 icon）
+    const exportGroupBtn = document.createElement("button");
+    exportGroupBtn.textContent = "📤 匯出";
+    exportGroupBtn.className = "export-group-btn";
+    exportGroupBtn.addEventListener("click", () => {
+      exportGroupNotes(groupKey, group);
+    });
+
+    groupHeader.appendChild(titleSpan);
+    groupHeader.appendChild(exportGroupBtn);
+    section.appendChild(groupHeader);
+
+    // ==== 每筆筆記內容列 ====
     group.forEach((note) => {
       const row = document.createElement("div");
       row.className = "note-content";
+      const iconLink = document.createElement("a");
+      iconLink.href = note.url;
+      iconLink.target = "_blank";
+      iconLink.rel = "noopener noreferrer";
 
       const iconImg = document.createElement("img");
       iconImg.src = note.iconUrl || "icons/default-icon.png";
       iconImg.alt = "icon";
       iconImg.className = "note-icon";
 
+      iconLink.appendChild(iconImg);
+
       const contentSpan = document.createElement("span");
       contentSpan.textContent = note.content;
+      contentSpan.className = "note-text";
 
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "🗑";
@@ -94,11 +101,11 @@ const showNoteList = async (
         e.stopPropagation();
         if (confirm("確定要刪除這筆筆記嗎？")) {
           await deleteNoteById(note.id);
-          await showNoteList(noteList, sortKey); // 保持原本的排序方式
+          await showNoteList(noteList, sortKey); // 保留排序方式
         }
       });
 
-      row.appendChild(iconImg);
+      row.appendChild(iconLink);
       row.appendChild(contentSpan);
       row.appendChild(deleteBtn);
 
@@ -155,55 +162,4 @@ const createNoteSaver = (
 
     showNoteList(noteList);
   };
-};
-
-const createNoteBlock = (note: Note): HTMLLIElement => {
-  const li = document.createElement("li");
-  li.className = "note-item";
-
-  const iconImg = document.createElement("img");
-  iconImg.src = note.iconUrl || "icons/default-icon.png";
-  iconImg.alt = "icon";
-  iconImg.className = "note-icon";
-
-  const contentSpan = document.createElement("span");
-  contentSpan.textContent = note.content;
-
-  const contentRow = document.createElement("div");
-  contentRow.className = "note-content";
-  contentRow.appendChild(iconImg);
-  contentRow.appendChild(contentSpan);
-
-  const urlLink = document.createElement("a");
-  urlLink.href = note.url;
-  urlLink.textContent = note.url;
-  urlLink.target = "_blank";
-  urlLink.className = "note-url";
-
-  const deleteBtn = document.createElement("button");
-  deleteBtn.innerText = "🗑";
-  deleteBtn.className = "note-delete-btn";
-  deleteBtn.addEventListener("click", async (e) => {
-    e.stopPropagation();
-    if (confirm("確定要刪除這筆筆記嗎？")) {
-      await deleteNoteById(note.id);
-      const noteList = document.getElementById("note-list") as HTMLUListElement;
-      await showNoteList(noteList);
-    }
-  });
-
-  li.appendChild(deleteBtn);
-  li.appendChild(contentRow);
-  li.appendChild(urlLink);
-  return li;
-};
-
-const deleteNoteById = async (id: string) => {
-  const notes: Note[] = (await getStorage("notes")) || [];
-
-  const filtered = notes.filter((note) => note.id !== id);
-
-  await setStorage({ notes: filtered });
-
-  console.log(`已刪除筆記（id=${id}）`);
 };
