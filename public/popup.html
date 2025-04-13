@@ -231,34 +231,118 @@
       background-color: #e67e22;
     }
 
-        
+    .tab-switch-btn {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      margin-top: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .tab-switch-btn:hover {
+      background-color: #4834d4;
+    }
+
+    #timer-tab {
+      text-align: center;
+    }
+
+    #timer {
+      font-size: 42px;
+      font-weight: bold;
+      margin: 20px 0;
+      color: #2c3e50;
+    }
+
+    .timer-controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .timer-controls button {
+      padding: 8px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      transition: background-color 0.2s ease;
+    }
+
+    .timer-start {
+      background-color: #2ecc71;
+    }
+    .timer-start:hover {
+      background-color: #27ae60;
+    }
+
+    .timer-pause {
+      background-color: #f39c12;
+    }
+    .timer-pause:hover {
+      background-color: #e67e22;
+    }
+
+    .timer-reset {
+      background-color: #e74c3c;
+    }
+    .timer-reset:hover {
+      background-color: #c0392b;
+    }
+
+    
 
   </style>
 </head>
 <body>
-  <h2>📝 我的筆記</h2>
 
-  <!-- 分組依據 -->
-  <label for="sort-select">📂 分組依據：</label>
-  <select id="sort-select">
-    <option value="url">網站網址（URL）</option>
-    <option value="hostname">網站來源（Hostname）</option>
-    <option value="tags">標籤（Tags）</option>
-  </select>
+  <button id="switch-to-timer" class="tab-switch-btn">⏱ 切換到計時器</button>
+  <button id="switch-to-note" class="tab-switch-btn" style="display:none;">📝 回到筆記</button>
 
-  <!-- 筆記清單 -->
-  <ul id="note-list">
-    <!-- JS 動態插入筆記群組與內容 -->
-  </ul>
+  <div id="note-tab">
+    <h2>📝 我的筆記</h2>
 
-  <!-- 新增筆記區塊 -->
-  <textarea id="note" placeholder="輸入新的筆記..."></textarea>
-  <input type="text" id="tag-input" placeholder="輸入標籤（以逗號分隔）" />
-  <button id="save-button">➕ 儲存筆記</button>
-  <button id="clear-button">🗑 清除所有筆記</button>
-  <button id="import-button">📥 匯入筆記</button>
-  <input type="file" id="import-file" accept=".json" style="display: none;" />
-  
-  <script src="popup.js"></script>
+    <!-- 分組依據 -->
+    <label for="sort-select">📂 分組依據：</label>
+    <select id="sort-select">
+      <option value="url">網站網址（URL）</option>
+      <option value="hostname">網站來源（Hostname）</option>
+      <option value="tags">標籤（Tags）</option>
+    </select>
+
+    <!-- 筆記清單 -->
+    <ul id="note-list">
+      <!-- JS 動態插入筆記群組與內容 -->
+    </ul>
+
+    <!-- 新增筆記區塊 -->
+    <textarea id="note" placeholder="輸入新的筆記..."></textarea>
+    <input type="text" id="tag-input" placeholder="輸入標籤（以逗號分隔）" />
+    <button id="save-button">➕ 儲存筆記</button>
+    <button id="clear-button">🗑 清除所有筆記</button>
+    <button id="import-button">📥 匯入筆記</button>
+    <input type="file" id="import-file" accept=".json" style="display: none;" />
+    
+    <script src="popup.js"></script>
+  </div>
+
+
+  <div id="timer-tab" style="display: none;">
+    <h2>⏱ 專注計時器</h2>
+    <div id="timer">30:00</div>
+    <div class="timer-controls">
+      <button class="timer-start" id="startBtn">開始</button>
+      <button class="timer-pause" id="pauseBtn">暫停</button>
+      <button class="timer-reset" id="resetBtn">重設</button>
+    </div>
+  </div>
+
+
 </body>
 </html>
