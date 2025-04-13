@@ -8,7 +8,7 @@ import {
 } from "../utils/noteUtils";
 import { Note, NoteMap } from "../types/note.types";
 import { Timer } from "../types/timer.types";
-import { startCountdownFromStorage } from "../utils/timerUtils";
+import { startCountdownFromStorage, pauseTime } from "../utils/timerUtils";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const noteList = document.getElementById("note-list") as HTMLUListElement;
@@ -54,10 +54,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 
-  const DURATION = 30 * 60; // 1800秒
-  let countInterval: number | null = null;
+  const DURATION = 30 * 60; // 1800 秒
+  const countIntervalRef = { id: null as number | null };
+  const resTimeRef = { value: 0 };
 
-  // ▶️ 切換到 Timer 區塊
+  // 🟢 切換到 Timer 頁面
   document
     .getElementById("switch-to-timer")
     ?.addEventListener("click", async () => {
@@ -66,10 +67,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("switch-to-timer")!.style.display = "none";
       document.getElementById("switch-to-note")!.style.display = "block";
 
-      await startCountdownFromStorage(countInterval, DURATION, timer);
+      const timers = await getStorage("timers");
+      if (timers && timers.length > 0) {
+        await startCountdownFromStorage(countIntervalRef, timer, resTimeRef);
+      }
     });
 
-  // 🔙 切換回筆記區塊
+  // 🔙 切換回筆記頁面
   document.getElementById("switch-to-note")?.addEventListener("click", () => {
     document.getElementById("note-tab")!.style.display = "block";
     document.getElementById("timer-tab")!.style.display = "none";
@@ -77,18 +81,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("switch-to-note")!.style.display = "none";
   });
 
-  // ▶️ Timer Start 按鈕
+  // ▶️ 開始倒數
   timerStartBtn.addEventListener("click", async () => {
-    await startCountdownFromStorage(countInterval, DURATION, timer);
+    await startCountdownFromStorage(countIntervalRef, timer, resTimeRef);
   });
 
-  // ⏸ Timer Pause 按鈕
-  timerPauseBtn.addEventListener("click", () => {
-    if (countInterval !== null) {
-      clearInterval(countInterval);
-      countInterval = null;
-    }
-  });
+  // ⏸ 暫停倒數
+  timerPauseBtn.addEventListener(
+    "click",
+    pauseTime(countIntervalRef, resTimeRef)
+  );
 });
 
 const showNoteList = async (
