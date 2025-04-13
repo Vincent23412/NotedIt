@@ -55,15 +55,21 @@ export async function startCountdownFromStorage(
   resTimeRef: { value: number }
 ) {
   const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
-
+  console.log("inside startCountdownFromStorage");
+  if (countIntervalRef.id !== null) {
+    return;
+  }
   if (timers.length > 0 && timers[0].isStop === false) {
+    console.log('A'); 
     resTimeRef.value =
       DURATION - Math.floor((Date.now() - timers[0].startTime) / 1000);
     timers[0].resTime = resTimeRef.value;
     await setStorage({ timers });
   } else if (timers.length > 0 && timers[0].isStop === true) {
+    console.log('B'); 
     resTimeRef.value = Math.floor(timers[0].resTime);
   } else {
+    console.log('C'); 
     const startTime = Date.now();
     await startTimer("test", startTime, DURATION);
     resTimeRef.value = DURATION;
