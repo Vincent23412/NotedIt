@@ -54,11 +54,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 
-  const DURATION = 30 * 60; // 1800 秒
+  const DURATION = 30 * 60; 
   const countIntervalRef = { id: null as number | null };
   const resTimeRef = { value: 0 };
 
-  // 🟢 切換到 Timer 頁面
   document
     .getElementById("switch-to-timer")
     ?.addEventListener("click", async () => {
@@ -73,7 +72,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-  // 🔙 切換回筆記頁面
   document.getElementById("switch-to-note")?.addEventListener("click", () => {
     document.getElementById("note-tab")!.style.display = "block";
     document.getElementById("timer-tab")!.style.display = "none";
@@ -81,12 +79,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("switch-to-note")!.style.display = "none";
   });
 
-  // ▶️ 開始倒數
   timerStartBtn.addEventListener("click", async () => {
     await startCountdownFromStorage(countIntervalRef, timer, resTimeRef);
   });
 
-  // ⏸ 暫停倒數
   timerPauseBtn.addEventListener(
     "click",
     pauseTime(countIntervalRef, resTimeRef)
