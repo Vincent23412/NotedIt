@@ -10,7 +10,9 @@ jobs:
 
     steps:
     - name: Send message to Discord
-      uses: "8398a7/action-slack@v3"  # 使用一個 Slack/Discord 發送工具
+      uses: fjogeleit/http-request-action@v1.2.0  # 使用支持 Webhook 的 Action
       with:
-        webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}  # 使用 GitHub Secrets 存儲 Webhook URL
-        message: "A new pull request has been created or updated: ${{ github.event.pull_request.html_url }}"
+        url: ${{ secrets.DISCORD_WEBHOOK_URL }}  # 使用 GitHub Secrets 存儲 Webhook URL
+        method: POST
+        headers: '{"Content-Type": "application/json"}'
+        body: '{"content": "A new pull request has been created or updated: ${{ github.event.pull_request.html_url }}"}'
