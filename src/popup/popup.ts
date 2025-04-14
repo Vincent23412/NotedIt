@@ -5,10 +5,12 @@ import {
   deleteNoteById,
   deleteAllNote,
   exportGroupNotes,
-} from "../utils/utils";
-import { Note, NoteMap } from "../types/note";
+} from "../utils/noteUtils";
+import { Note, NoteMap } from "../types/note.types";
+import { Timer } from "../types/timer.types";
+import { startCountdownFromStorage, pauseTime } from "../utils/timerUtils";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const noteList = document.getElementById("note-list") as HTMLUListElement;
   const textarea = document.getElementById("note") as HTMLTextAreaElement;
   const saveButton = document.getElementById(
@@ -26,6 +28,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const importFileInput = document.getElementById(
     "import-file"
   ) as HTMLInputElement;
+  const timerStartBtn = document.getElementById(
+    "startBtn"
+  ) as HTMLButtonElement;
+  const timerPauseBtn = document.getElementById(
+    "pauseBtn"
+  ) as HTMLButtonElement;
+  const timerResetBtn = document.getElementById(
+    "resetBtn"
+  ) as HTMLButtonElement;
+  const timer = document.getElementById("timer") as HTMLDivElement;
 
   clearButton.addEventListener("click", deleteAllNote);
 
@@ -41,6 +53,40 @@ document.addEventListener("DOMContentLoaded", () => {
   importFileInput.addEventListener("change", importFile);
 
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
+
+  const DURATION = 30 * 60; 
+  const countIntervalRef = { id: null as number | null };
+  const resTimeRef = { value: 0 };
+
+  document
+    .getElementById("switch-to-timer")
+    ?.addEventListener("click", async () => {
+      document.getElementById("note-tab")!.style.display = "none";
+      document.getElementById("timer-tab")!.style.display = "block";
+      document.getElementById("switch-to-timer")!.style.display = "none";
+      document.getElementById("switch-to-note")!.style.display = "block";
+
+      const timers = await getStorage("timers");
+      if (timers && timers.length > 0) {
+        await startCountdownFromStorage(countIntervalRef, timer, resTimeRef);
+      }
+    });
+
+  document.getElementById("switch-to-note")?.addEventListener("click", () => {
+    document.getElementById("note-tab")!.style.display = "block";
+    document.getElementById("timer-tab")!.style.display = "none";
+    document.getElementById("switch-to-timer")!.style.display = "block";
+    document.getElementById("switch-to-note")!.style.display = "none";
+  });
+
+  timerStartBtn.addEventListener("click", async () => {
+    await startCountdownFromStorage(countIntervalRef, timer, resTimeRef);
+  });
+
+  timerPauseBtn.addEventListener(
+    "click",
+    pauseTime(countIntervalRef, resTimeRef)
+  );
 });
 
 const showNoteList = async (
@@ -167,6 +213,8 @@ const createNoteSaver = (
     notes.push(note);
 
     notes.sort((a, b) => a.hostname.charCodeAt(0) - b.hostname.charCodeAt(0));
+
+    console.log("notes data", notes);
 
     await setStorage({ notes });
 

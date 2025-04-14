@@ -1,0 +1,16 @@
+name: Discord Notification on Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]  # 當 Pull Request 被創建、更新或重新開啟時觸發
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Send message to Discord
+      uses: "8398a7/action-slack@v3"  # 使用一個 Slack/Discord 發送工具
+      with:
+        webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}  # 使用 GitHub Secrets 存儲 Webhook URL
+        message: "A new pull request has been created or updated: ${{ github.event.pull_request.html_url }}"

@@ -1,5 +1,4 @@
-import { copyFileSync } from "fs";
-import { Note } from "../types/note";
+import { Note } from "../types/note.types";
 import { group } from "console";
 function getStorage<T = any>(key: string): Promise<T> {
   return new Promise((resolve) => {
@@ -55,9 +54,8 @@ const deleteAllNote = async () => {
 
 const exportGroupNotes = (groupKey: string, notes: Note[]) => {
   const contents: string[] = notes
-  .filter(note => note.content && note.content.trim() !== "")
-  .map(note => note.content);
-
+    .filter((note) => note.content && note.content.trim() !== "")
+    .map((note) => note.content);
 
   console.log("匯出群組：", groupKey);
 
@@ -79,7 +77,6 @@ const exportGroupNotes = (groupKey: string, notes: Note[]) => {
   a.click();
   document.body.removeChild(a);
 };
-
 
 export {
   getStorage,
