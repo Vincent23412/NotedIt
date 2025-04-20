@@ -8,7 +8,12 @@ import {
 } from "../utils/noteUtils";
 import { Note, NoteMap } from "../types/note.types";
 import { Timer } from "../types/timer.types";
-import { startCountdownFromStorage, pauseTime } from "../utils/timerUtils";
+import {
+  startCountdownFromStorage,
+  pauseTime,
+  startTimer,
+  removeTimer,
+} from "../utils/timerUtils";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const noteList = document.getElementById("note-list") as HTMLUListElement;
@@ -54,9 +59,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 
-  const DURATION = 30 * 60; 
   const countIntervalRef = { id: null as number | null };
-  const resTimeRef = { value: 0 };
+  const timeRef = { value: 0 };
 
   document
     .getElementById("switch-to-timer")
@@ -66,9 +70,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("switch-to-timer")!.style.display = "none";
       document.getElementById("switch-to-note")!.style.display = "block";
 
-      const timers = await getStorage("timers");
-      if (timers && timers.length > 0) {
-        await startCountdownFromStorage(countIntervalRef, timer, resTimeRef);
+      const timers: Timer[] = await getStorage("timers");
+      if (timers && timers.length > 0 && timers[0].isStop === false) {
+        await startCountdownFromStorage(countIntervalRef, timer, timeRef);
+      } else if (timers && timers.length > 0 && timers[0].isStop === true) {
+        const minutes = Math.floor(timers[0].time / 60);
+        const seconds = timers[0].time % 60;
+        timer.textContent = `${String(minutes).padStart(2, "0")}:${String(
+          seconds
+        ).padStart(2, "0")}`;
       }
     });
 
@@ -80,13 +90,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   timerStartBtn.addEventListener("click", async () => {
-    await startCountdownFromStorage(countIntervalRef, timer, resTimeRef);
+    await startCountdownFromStorage(countIntervalRef, timer, timeRef);
   });
 
-  timerPauseBtn.addEventListener(
-    "click",
-    pauseTime(countIntervalRef, resTimeRef)
-  );
+  timerPauseBtn.addEventListener("click", pauseTime(countIntervalRef, timeRef));
+
+  timerResetBtn.addEventListener("click", removeTimer(countIntervalRef, timer));
 });
 
 const showNoteList = async (

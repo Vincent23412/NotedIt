@@ -1,86 +1,64 @@
 import { setStorage, getStorage } from "../utils/noteUtils";
 import { Timer } from "../types/timer.types";
 
-const DURATION = 30 * 60; // 預設倒數時間
-
-export async function startTimer(
-  item: string,
-  startTime: number,
-  duration: number
-) {
+export async function startTimer(item: string, startTime: number) {
   const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
   const timer: Timer = {
     item,
     startTime,
     isStop: false,
-    stopTime: 0,
-    resTime: duration,
+    time: 0,
   };
   timers.push(timer);
   await setStorage({ timers });
 }
 
 export function startCountdown(
-  resTimeRef: { value: number },
+  timeRef: { value: number },
   countIntervalRef: { id: number | null },
   timerDisplay: HTMLDivElement
 ) {
-  if (countIntervalRef.id !== null) {
-    clearInterval(countIntervalRef.id);
-  }
+  if (countIntervalRef.id !== null) return;
 
   countIntervalRef.id = window.setInterval(() => {
-    let totalResSeconds = resTimeRef.value;
-    if (totalResSeconds < 0) totalResSeconds = 0;
-
-    const minute = Math.floor(totalResSeconds / 60);
-    const second = totalResSeconds % 60;
+    const totalSeconds = timeRef.value;
+    const minute = Math.floor(totalSeconds / 60);
+    const second = totalSeconds % 60;
 
     timerDisplay.textContent = `${String(minute).padStart(2, "0")}:${String(
       second
     ).padStart(2, "0")}`;
 
-    if (totalResSeconds === 0) {
-      clearInterval(countIntervalRef.id!);
-      countIntervalRef.id = null;
-    }
-
-    resTimeRef.value--;
+    timeRef.value++;
   }, 1000);
 }
 
 export async function startCountdownFromStorage(
   countIntervalRef: { id: number | null },
   timerDisplay: HTMLDivElement,
-  resTimeRef: { value: number }
+  timeRef: { value: number }
 ) {
-  const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
-  if (countIntervalRef.id !== null) {
-    return;
-  }
-  if (timers.length > 0 && timers[0].isStop === false) {
-    console.log('A'); 
-    resTimeRef.value =
-      DURATION - Math.floor((Date.now() - timers[0].startTime) / 1000);
-    timers[0].resTime = resTimeRef.value;
-    await setStorage({ timers });
-  } else if (timers.length > 0 && timers[0].isStop === true) {
-    console.log('B'); 
-    setStorage({timers}); 
-    resTimeRef.value = Math.floor(timers[0].resTime);
-  } else {
-    console.log('C'); 
-    const startTime = Date.now();
-    await startTimer("test", startTime, DURATION);
-    resTimeRef.value = DURATION;
+  let timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
+
+  if (timers.length === 0) {
+    await startTimer("test", Math.floor(Date.now() / 1000));
+    timers = (await getStorage<Timer[]>("timers")) || [];
   }
 
-  startCountdown(resTimeRef, countIntervalRef, timerDisplay);
+  if (timers[0].isStop) {
+    timeRef.value = timers[0].time;
+    timers[0].isStop = false;
+    await setStorage({ timers });
+  } else {
+    timeRef.value = Math.floor(Date.now() / 1000 - timers[0].startTime);
+  }
+
+  startCountdown(timeRef, countIntervalRef, timerDisplay);
 }
 
 export function pauseTime(
   countIntervalRef: { id: number | null },
-  resTimeRef: { value: number }
+  timeRef: { value: number }
 ) {
   return async () => {
     if (countIntervalRef.id !== null) {
@@ -92,7 +70,20 @@ export function pauseTime(
     if (timers.length === 0) return;
 
     timers[0].isStop = true;
-    timers[0].resTime = resTimeRef.value;
+    timers[0].time = timeRef.value;
     await setStorage({ timers });
+  };
+}
+
+export function removeTimer(
+  countIntervalRef: { id: number | null },
+  timerDisplay: HTMLDivElement
+) {
+  return async () => {
+    if (countIntervalRef.id) {
+      clearInterval(countIntervalRef.id);
+    }
+    await chrome.storage.local.remove("timers");
+    timerDisplay.textContent = "00:00";
   };
 }

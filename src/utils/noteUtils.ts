@@ -1,5 +1,4 @@
 import { Note } from "../types/note.types";
-import { group } from "console";
 function getStorage<T = any>(key: string): Promise<T> {
   return new Promise((resolve) => {
     chrome.storage.local.get(key, (result) => {
