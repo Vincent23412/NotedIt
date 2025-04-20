@@ -332,17 +332,18 @@
     <script src="popup.js"></script>
   </div>
 
-
   <div id="timer-tab" style="display: none;">
     <h2>⏱ 專注計時器</h2>
-    <div id="timer">00:00</div>
-    <div class="timer-controls">
-      <button class="timer-start" id="startBtn">開始</button>
-      <button class="timer-pause" id="pauseBtn">暫停</button>
-      <button class="timer-reset" id="resetBtn">重設</button>
+  
+    <div class="timer-add-section">
+      <input id="new-timer-name" type="text" placeholder="輸入科目名稱，如：國文、英文..." />
+      <button id="add-timer-btn">➕ 新增</button>
     </div>
+  
+    <ul id="timer-list">
+     
+    </ul>
   </div>
-
-
+  
 </body>
 </html>

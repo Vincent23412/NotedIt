@@ -14,6 +14,7 @@ import {
   startTimer,
   removeTimer,
 } from "../utils/timerUtils";
+import { time } from "console";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const noteList = document.getElementById("note-list") as HTMLUListElement;
@@ -42,7 +43,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const timerResetBtn = document.getElementById(
     "resetBtn"
   ) as HTMLButtonElement;
-  const timer = document.getElementById("timer") as HTMLDivElement;
+  const addTimerBtn = document.getElementById(
+    "add-timer-btn"
+  ) as HTMLInputElement;
+  const newSubject = document.getElementById(
+    "new-timer-name"
+  ) as HTMLInputElement;
 
   clearButton.addEventListener("click", deleteAllNote);
 
@@ -59,8 +65,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   saveButton.addEventListener("click", createNoteSaver(noteList, textarea));
 
-  const countIntervalRef = { id: null as number | null };
-  const timeRef = { value: 0 };
+  addTimerBtn.addEventListener("click", async () => {
+    await startTimer(newSubject.value, Date.now());
+    newSubject.value = "";
+    await showTimer(); 
+  });
 
   document
     .getElementById("switch-to-timer")
@@ -71,31 +80,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("switch-to-note")!.style.display = "block";
 
       const timers: Timer[] = await getStorage("timers");
-      if (timers && timers.length > 0 && timers[0].isStop === false) {
-        await startCountdownFromStorage(countIntervalRef, timer, timeRef);
-      } else if (timers && timers.length > 0 && timers[0].isStop === true) {
-        const minutes = Math.floor(timers[0].time / 60);
-        const seconds = timers[0].time % 60;
-        timer.textContent = `${String(minutes).padStart(2, "0")}:${String(
-          seconds
-        ).padStart(2, "0")}`;
+
+      // const timerMap = new Map<string, Map<String, any>>();
+      console.log(timers, "timers");
+      if (timers && timers.length > 0) {
+        showTimer();
       }
+
+      document
+        .getElementById("switch-to-note")
+        ?.addEventListener("click", () => {
+          document.getElementById("note-tab")!.style.display = "block";
+          document.getElementById("timer-tab")!.style.display = "none";
+          document.getElementById("switch-to-timer")!.style.display = "block";
+          document.getElementById("switch-to-note")!.style.display = "none";
+        });
     });
-
-  document.getElementById("switch-to-note")?.addEventListener("click", () => {
-    document.getElementById("note-tab")!.style.display = "block";
-    document.getElementById("timer-tab")!.style.display = "none";
-    document.getElementById("switch-to-timer")!.style.display = "block";
-    document.getElementById("switch-to-note")!.style.display = "none";
-  });
-
-  timerStartBtn.addEventListener("click", async () => {
-    await startCountdownFromStorage(countIntervalRef, timer, timeRef);
-  });
-
-  timerPauseBtn.addEventListener("click", pauseTime(countIntervalRef, timeRef));
-
-  timerResetBtn.addEventListener("click", removeTimer(countIntervalRef, timer));
 });
 
 const showNoteList = async (
@@ -276,3 +276,69 @@ const importFile = async (event: Event) => {
     (event.target as HTMLInputElement).value = "";
   }
 };
+
+async function showTimer() {
+  const timers: Timer[] = (await getStorage("timers")) || [];
+  const timerList = document.getElementById("timer-list")!;
+  timerList.innerHTML = "";
+  timers.forEach(async (t: Timer) => {
+    const li = document.createElement("li");
+    li.className = "timer-item";
+
+    const name = document.createElement("div");
+    name.className = "timer-name";
+    name.textContent = t.item;
+
+    const time = document.createElement("div");
+    time.className = "timer-time";
+    const minutes = Math.floor(t.time / 60);
+    const seconds = t.time % 60;
+    time.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+    const controls = document.createElement("div");
+    controls.className = "timer-controls";
+
+    const startBtn = document.createElement("button");
+    startBtn.className = "start-btn";
+    startBtn.textContent = "▶️";
+
+    const pauseBtn = document.createElement("button");
+    pauseBtn.className = "pause-btn";
+    pauseBtn.textContent = "⏸";
+
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "reset-btn";
+    resetBtn.textContent = "🔄";
+
+    controls.appendChild(startBtn);
+    controls.appendChild(pauseBtn);
+    controls.appendChild(resetBtn);
+
+    li.appendChild(name);
+    li.appendChild(time);
+    li.appendChild(controls);
+
+    const itemMap = new Map<string, any>();
+
+    for (const key in t) {
+      if (Object.prototype.hasOwnProperty.call(t, key)) {
+        itemMap.set(key as keyof Timer, t[key as keyof Timer]);
+      }
+    }
+    itemMap.set("timerDisplay", time);
+    // timerMap.set(t.item, itemMap);
+
+    startBtn.addEventListener("click", () => {
+      startCountdownFromStorage(itemMap);
+    });
+    pauseBtn.addEventListener("click", pauseTime(itemMap));
+    resetBtn.addEventListener("click", removeTimer(itemMap));
+
+    timerList.appendChild(li);
+
+    // 若有正在執行的 timer，可額外顯示主視覺 timer（可選）
+    if (t.isStop === false) {
+      await startCountdownFromStorage(itemMap);
+    }
+  });
+}
