@@ -1,98 +1,104 @@
 import { setStorage, getStorage } from "../utils/noteUtils";
 import { Timer } from "../types/timer.types";
 
-const DURATION = 30 * 60; // 預設倒數時間
-
-export async function startTimer(
-  item: string,
-  startTime: number,
-  duration: number
-) {
+export async function startTimer(item: string, startTime: number) {
   const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
+  for (const i of timers) {
+    if (i.item === item) {
+      return;
+    }
+  }
+
   const timer: Timer = {
     item,
     startTime,
     isStop: false,
-    stopTime: 0,
-    resTime: duration,
+    time: 0,
   };
   timers.push(timer);
   await setStorage({ timers });
 }
 
-export function startCountdown(
-  resTimeRef: { value: number },
-  countIntervalRef: { id: number | null },
-  timerDisplay: HTMLDivElement
-) {
-  if (countIntervalRef.id !== null) {
-    clearInterval(countIntervalRef.id);
-  }
-
-  countIntervalRef.id = window.setInterval(() => {
-    let totalResSeconds = resTimeRef.value;
-    if (totalResSeconds < 0) totalResSeconds = 0;
-
-    const minute = Math.floor(totalResSeconds / 60);
-    const second = totalResSeconds % 60;
-
-    timerDisplay.textContent = `${String(minute).padStart(2, "0")}:${String(
-      second
-    ).padStart(2, "0")}`;
-
-    if (totalResSeconds === 0) {
-      clearInterval(countIntervalRef.id!);
-      countIntervalRef.id = null;
-    }
-
-    resTimeRef.value--;
-  }, 1000);
-}
-
-export async function startCountdownFromStorage(
-  countIntervalRef: { id: number | null },
-  timerDisplay: HTMLDivElement,
-  resTimeRef: { value: number }
-) {
-  const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
-  if (countIntervalRef.id !== null) {
+export async function startCountdownFromStorage(itemMap: Map<string, any>) {
+  if (
+    itemMap.has("countIntervalRef") &&
+    itemMap.get("countIntervalRef") !== null
+  ) {
     return;
   }
-  if (timers.length > 0 && timers[0].isStop === false) {
-    console.log('A'); 
-    resTimeRef.value =
-      DURATION - Math.floor((Date.now() - timers[0].startTime) / 1000);
-    timers[0].resTime = resTimeRef.value;
-    await setStorage({ timers });
-  } else if (timers.length > 0 && timers[0].isStop === true) {
-    console.log('B'); 
-    setStorage({timers}); 
-    resTimeRef.value = Math.floor(timers[0].resTime);
-  } else {
-    console.log('C'); 
-    const startTime = Date.now();
-    await startTimer("test", startTime, DURATION);
-    resTimeRef.value = DURATION;
+  const timers = (await getStorage<Timer[]>("timers")) || [];
+  const targetTimer = timers.find(
+    (timer) => timer.item === itemMap.get("item")
+  );
+  if (!targetTimer) return;
+  if (!targetTimer.isStop) {
+    let nowTime = Math.floor((Date.now() - targetTimer.startTime) / 1000);
+    itemMap.set("time", nowTime);
   }
 
-  startCountdown(resTimeRef, countIntervalRef, timerDisplay);
+  targetTimer.isStop = false;
+  await setStorage({ timers });
+
+  const countIntervalRef = window.setInterval(async () => {
+    const totalSeconds = itemMap.get("time");
+    const minute = Math.floor(totalSeconds / 60);
+    const second = totalSeconds % 60;
+
+    itemMap.get("timerDisplay").textContent =
+      `${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
+
+    itemMap.set("time", totalSeconds + 1);
+  }, 1000);
+  itemMap.set("countIntervalRef", countIntervalRef);
 }
 
-export function pauseTime(
-  countIntervalRef: { id: number | null },
-  resTimeRef: { value: number }
-) {
+export function pauseTime(itemMap: Map<string, any>) {
   return async () => {
-    if (countIntervalRef.id !== null) {
-      clearInterval(countIntervalRef.id);
-      countIntervalRef.id = null;
+    if (itemMap.get("countIntervalRef") !== null) {
+      clearInterval(itemMap.get("countIntervalRef"));
+      itemMap.set("countIntervalRef", null);
+
+      const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
+      if (timers.length === 0) return;
+      const targetTimer = timers.find(
+        (timer) => timer.item === itemMap.get("item")
+      );
+      if (!targetTimer) return;
+
+      targetTimer.isStop = true;
+      targetTimer.time = itemMap.get("time");
+      await setStorage({ timers });
+    }
+  };
+}
+
+export function removeTimer(itemMap: Map<string, any>) {
+  return async () => {
+    if (itemMap.get("countIntervalRef")) {
+      clearInterval(itemMap.get("countIntervalRef"));
+      itemMap.delete("countIntervalRef");
     }
 
+    itemMap.set("time", 0);
+    itemMap.get("timerDisplay").textContent = "00:00";
+    itemMap.set("countIntervalRef", null);
     const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
-    if (timers.length === 0) return;
-
-    timers[0].isStop = true;
-    timers[0].resTime = resTimeRef.value;
+    const target = timers.find((timer) => timer.item === itemMap.get("item"));
+    if (!target) return;
+    target.time = 0;
+    target.isStop = true;
+    target.startTime = Date.now();
     await setStorage({ timers });
   };
+}
+
+export async function deleteTimer(itemMap: Map<string, any>) {
+  const timers: Timer[] = (await getStorage<Timer[]>("timers")) || [];
+  const targetIndex = timers.findIndex(
+    (timer) => timer.item === itemMap.get("item")
+  );
+  if (targetIndex !== -1) {
+    timers.splice(targetIndex, 1);
+    await setStorage({ timers });
+  }
 }
