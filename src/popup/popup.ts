@@ -13,6 +13,7 @@ import {
   pauseTime,
   startTimer,
   removeTimer,
+  deleteTimer,
 } from "../utils/timerUtils";
 import { time } from "console";
 
@@ -34,15 +35,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const importFileInput = document.getElementById(
     "import-file"
   ) as HTMLInputElement;
-  const timerStartBtn = document.getElementById(
-    "startBtn"
-  ) as HTMLButtonElement;
-  const timerPauseBtn = document.getElementById(
-    "pauseBtn"
-  ) as HTMLButtonElement;
-  const timerResetBtn = document.getElementById(
-    "resetBtn"
-  ) as HTMLButtonElement;
   const addTimerBtn = document.getElementById(
     "add-timer-btn"
   ) as HTMLInputElement;
@@ -68,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   addTimerBtn.addEventListener("click", async () => {
     await startTimer(newSubject.value, Date.now());
     newSubject.value = "";
-    await showTimer(); 
+    await showTimer();
   });
 
   document
@@ -281,9 +273,13 @@ async function showTimer() {
   const timers: Timer[] = (await getStorage("timers")) || [];
   const timerList = document.getElementById("timer-list")!;
   timerList.innerHTML = "";
+
   timers.forEach(async (t: Timer) => {
     const li = document.createElement("li");
     li.className = "timer-item";
+
+    const header = document.createElement("div");
+    header.className = "timer-header";
 
     const name = document.createElement("div");
     name.className = "timer-name";
@@ -294,6 +290,9 @@ async function showTimer() {
     const minutes = Math.floor(t.time / 60);
     const seconds = t.time % 60;
     time.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+    header.appendChild(name);
+    header.appendChild(time);
 
     const controls = document.createElement("div");
     controls.className = "timer-controls";
@@ -310,14 +309,19 @@ async function showTimer() {
     resetBtn.className = "reset-btn";
     resetBtn.textContent = "🔄";
 
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.textContent = "❌";
+
     controls.appendChild(startBtn);
     controls.appendChild(pauseBtn);
     controls.appendChild(resetBtn);
+    controls.appendChild(deleteBtn);
 
-    li.appendChild(name);
-    li.appendChild(time);
+    li.appendChild(header);
     li.appendChild(controls);
 
+    timerList.appendChild(li);
     const itemMap = new Map<string, any>();
 
     for (const key in t) {
@@ -326,15 +330,16 @@ async function showTimer() {
       }
     }
     itemMap.set("timerDisplay", time);
-    // timerMap.set(t.item, itemMap);
 
     startBtn.addEventListener("click", () => {
       startCountdownFromStorage(itemMap);
     });
     pauseBtn.addEventListener("click", pauseTime(itemMap));
     resetBtn.addEventListener("click", removeTimer(itemMap));
-
-    timerList.appendChild(li);
+    deleteBtn.addEventListener("click", async () => {
+      await deleteTimer(itemMap);
+      showTimer();
+    });
 
     // 若有正在執行的 timer，可額外顯示主視覺 timer（可選）
     if (t.isStop === false) {

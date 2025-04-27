@@ -295,6 +295,105 @@
     .timer-reset:hover {
       background-color: #c0392b;
     }
+    #timer-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .timer-item {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .timer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .timer-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .timer-time {
+      font-size: 18px;
+      font-weight: bold;
+      color: #007acc;
+    }
+
+    .timer-controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .timer-controls button {
+      padding: 6px 10px;
+      font-size: 14px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .timer-controls button:hover {
+      background: #dcdcdc;
+    }
+    #timer-tab {
+      padding: 10px;
+    }
+
+    .timer-add-section {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    #new-timer-name {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background-color: #fff;
+    }
+
+    #new-timer-name:focus {
+      border-color: #007acc;
+      outline: none;
+    }
+
+    #add-timer-btn {
+      padding: 8px 12px;
+      font-size: 14px;
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    #add-timer-btn:hover {
+      background-color: #27ae60;
+    }
+
+    #timer-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    
 
     
 
@@ -336,14 +435,15 @@
     <h2>⏱ 專注計時器</h2>
   
     <div class="timer-add-section">
-      <input id="new-timer-name" type="text" placeholder="輸入科目名稱，如：國文、英文..." />
-      <button id="add-timer-btn">➕ 新增</button>
+      <input id="new-timer-name" type="text" placeholder="輸入科目名稱（如：國文、英文...）" />
+      <button id="add-timer-btn">➕ 新增科目</button>
     </div>
   
     <ul id="timer-list">
-     
+      <!-- JS 動態插入 timer 項目 -->
     </ul>
   </div>
+  
   
 </body>
 </html>
